@@ -122,4 +122,4 @@ customer_segmentation/
 7. Run `Data/rfm.py` for the segment summary, or open the `.pbix` file in Power BI Desktop.
 
 ## Author
-Your Name | [LinkedIn](https://linkedin.com/in/your-profile) | [GitHub](https://github.com/your-username)
+Your Name | [LinkedIn](https://linkedin.com/in/your-profile) | [GitHub](shwetadhurve588-wq ·)
