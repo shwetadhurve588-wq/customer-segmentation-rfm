@@ -1,101 +1,132 @@
-# Customer Segmentation using RFM Analysis (PostgreSQL, Python, Power BI)
+# Who Are the Customers Worth Keeping?
+### RFM customer segmentation on 392,692 retail transactions
 
-## Business Summary
-An online retailer sends the same offers to every customer. This wastes marketing budget on customers who rarely buy and under-rewards the ones who bring in most of the revenue.
+**Stack:** PostgreSQL · SQL · Python (pandas, SQLAlchemy) · Power BI
 
-I segmented **4,338 customers** using RFM analysis (Recency, Frequency, Monetary value). The result: **21.8% of customers (Champions) generate 64.5% of revenue**. The business should protect this group first, then win back "At Risk" customers, who are the best return on marketing spend.
-
-## Problem Statement
-An online retailer treats all customers the same, sending identical offers to everyone. This project segments customers using RFM analysis on transaction data so the business can target high-value customers, win back at-risk ones, and spend marketing budget more efficiently.
-
-## Dashboard
 ![Dashboard](dashboard/dashboard.png)
 
-## Tools Used
-- **PostgreSQL**: data storage, RFM calculation and segmentation (SQL)
-- **Python** (pandas, SQLAlchemy, psycopg2, matplotlib): data loading and cleaning
-- **Power BI**: one-page dashboard
+---
 
-## Data Source
-- **Online Retail dataset** (UCI Machine Learning Repository / Kaggle)
-- UK-based online retailer, transactions from **1 Dec 2010 to 9 Dec 2011**
-- 541,909 rows, 8 columns
+## The short version
 
-| Column | Meaning |
-|---|---|
-| InvoiceNo | Invoice number (starts with "C" if cancelled) |
-| StockCode | Product code |
-| Description | Product name |
-| Quantity | Units per transaction |
-| InvoiceDate | Date and time of the transaction |
-| UnitPrice | Price per unit (£) |
-| CustomerID | Unique customer ID |
-| Country | Customer's country |
+A UK online retailer sends the same offers to everyone. I split its 4,338 identifiable customers into six segments based on how recently, how often and how much they buy.
 
-## Data Cleaning Log
+> **22% of customers (Champions) bring in 64.5% of revenue.**
+> Champions and Loyal customers together are 44.5% of the base and **79.8% of revenue**.
 
-| Step | Rows left | Rows removed |
+The best place to spend win-back budget is the **At Risk** group, not the Lost group.
+
+---
+
+## The business question
+
+How should a retailer split its marketing budget when customers are very different in value?
+
+Sending one offer to everyone wastes money on people who rarely buy, and under-rewards the people who keep the business running. RFM analysis gives each customer a score for:
+
+| Letter | Measure | How I calculated it |
 |---|---|---|
-| Raw data | 541,909 | - |
-| Removed rows with missing Customer ID | 406,829 | 135,080 |
-| Removed cancelled orders (invoice starts with "C") | 397,924 | 8,905 |
-| Removed zero or negative quantity or price | 397,884 | 40 |
-| Removed duplicate rows | 392,692 | 5,192 |
+| **R** | Recency | Days since the customer's last order |
+| **F** | Frequency | Number of distinct orders |
+| **M** | Monetary | Total spend (£) |
 
-**Final clean dataset: 392,692 rows (72.5% of the raw data).**
+---
 
-Other steps: converted `InvoiceDate` to datetime, converted `CustomerID` to integer, and created `total_price = quantity x unit_price`.
+## What I found
 
-Customers without an ID cannot be tracked across orders, so they cannot be segmented.
-
-## Method
-1. **Load** the raw CSV into PostgreSQL with Python (`Load_data.py`).
-2. **Clean** the data in Python and save it as the `retail_clean` table (`Clean_data.py`).
-3. **Calculate RFM** per customer in SQL:
-   - Recency: days since the last purchase
-   - Frequency: number of distinct orders
-   - Monetary: total spend
-4. **Score** each metric from 1 to 5 using `NTILE(5)` (5 is best).
-5. **Assign segments** with rules on the scores (see `sql/rfm_queries.sql`).
-6. **Visualize** in Power BI.
-
-## Key Insights
-
-| Segment | Customers | % of customers | Revenue (£) | % of revenue | Avg spend (£) |
+| Segment | Customers | Share of customers | Revenue (£) | Share of revenue | Avg spend (£) |
 |---|---|---|---|---|---|
-| Champions | 947 | 21.8% | 5,730,403 | 64.5% | ~6,051 |
+| Champions | 947 | 21.8% | 5,730,403 | **64.5%** | ~6,051 |
 | Loyal Customers | 985 | 22.7% | 1,359,260 | 15.3% | ~1,380 |
 | At Risk | 670 | 15.4% | 849,783 | 9.6% | ~1,268 |
 | Lost | 1,066 | 24.6% | 495,535 | 5.6% | ~465 |
 | New / Promising | 312 | 7.2% | 287,385 | 3.2% | ~921 |
 | Potential Loyalists | 358 | 8.3% | 164,843 | 1.9% | ~460 |
 
-1. **Champions are 21.8% of customers but generate 64.5% of revenue.**
-2. **Champions and Loyal Customers together are 44.5% of customers and 79.8% of revenue.**
-3. A Champion spends about **13x more** than a Lost customer and about **4.4x more** than a Loyal customer.
-4. **Lost customers are the biggest group (24.6%) but only 5.6% of revenue**, so heavy spending to win them back is poor value.
-5. **At Risk customers (15.4%) have already spent £849,783** and average £1,268 each, close to a Loyal customer. They are the best win-back target.
+**Five things worth noticing**
+1. A Champion spends about **13x** more than a Lost customer and **4.4x** more than a Loyal one.
+2. The Lost group is the largest (24.6%) but adds only 5.6% of revenue.
+3. At Risk customers average £1,268, close to Loyal customers, and have already spent £849,783 in total.
+4. Losing even a small share of Champions would hurt more than losing all the Lost customers.
+5. New / Promising customers already spend about £921 each, which is a strong start.
 
-## Recommendations
+---
 
-| Segment | Action |
-|---|---|
-| Champions | Protect first: early access, loyalty rewards, referral program |
-| Loyal Customers | Upsell with bundles and offers to move them toward Champion level |
-| At Risk | Personalized win-back email with a time-limited discount |
-| New / Promising | Welcome series and a second-purchase offer |
-| Potential Loyalists | Low-cost nudges such as product recommendations |
-| Lost | Low-cost reactivation email only, or exclude to save budget |
+## What I would do about it
 
-## Limitations
-- The data covers about one year, so seasonality may affect Recency scores.
-- About 25% of raw rows had no Customer ID and were excluded.
-- Segment rules are my own choices; different cutoffs would change segment sizes.
-- The dataset is from 2010 to 2011 and may not reflect current customer behavior.
+| Segment | Action | Why |
+|---|---|---|
+| Champions | Early access, loyalty rewards, referral program | Protect the revenue core |
+| Loyal Customers | Bundles and upsell offers | There is a 4.4x spend gap to Champions |
+| At Risk | Personalized win-back email with a time-limited offer | Best return on marketing spend |
+| New / Promising | Welcome series and second-purchase offer | Convert early momentum into habit |
+| Potential Loyalists | Product recommendations | Low-cost way to raise frequency |
+| Lost | One cheap reactivation email, then stop | Low value per customer |
 
-## Project Structure
+---
+
+## How I built it
+
 ```
-customer_segmentation/
+CSV  →  Python loads into PostgreSQL  →  Python cleans  →  SQL builds RFM  →  Power BI dashboard
+```
+
+**1. Load.** `Data/Load_data.py` reads the CSV, fixes data types and writes 541,909 rows to the `online_retail` table.
+
+**2. Clean.** `Data/Clean_data.py` produces the `retail_clean` table:
+
+| Step | Rows left | Removed |
+|---|---|---|
+| Raw data | 541,909 | n/a |
+| Missing Customer ID | 406,829 | 135,080 |
+| Cancelled orders (invoice starts with "C") | 397,924 | 8,905 |
+| Zero or negative quantity or price | 397,884 | 40 |
+| Duplicate rows | 392,692 | 5,192 |
+
+It also adds `total_price = quantity × unit_price`. Rows with no Customer ID can't be tracked across orders, so they can't be segmented.
+
+**3. Score.** `sql/rfm_queries.sql` builds `rfm`, `rfm_scores` and `rfm_segments`. Each metric gets a 1–5 score with `NTILE(5)`, and segment rules are applied on the scores.
+
+**4. Visualize.** The Power BI dashboard (`dashboard/customer_segmentation.pbix`) shows KPI cards, segment size, revenue share, average spend, and an insight table.
+
+---
+
+## Data
+
+- **Online Retail dataset** (UCI Machine Learning Repository / Kaggle)
+- UK online retailer, 1 Dec 2010 to 9 Dec 2011
+- 541,909 rows, 8 columns: InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country
+- The CSV is not included in this repository. Download it and save it as `Data/Online_Retail.csv`.
+
+---
+
+## Limits of this analysis
+
+- About 25% of raw rows had no Customer ID, so the results describe identified customers only.
+- The data spans roughly one year, so seasonality can affect Recency scores.
+- The segment rules are my own choices. Different cutoffs would change segment sizes.
+- The data is from 2010–2011 and may not match current buying behavior.
+
+---
+
+## Run it yourself
+
+1. Install PostgreSQL and create a database called `retail_db`.
+2. Install packages:
+   ```
+   pip install pandas sqlalchemy psycopg2-binary matplotlib python-dotenv
+   ```
+3. Download the dataset and save it as `Data/Online_Retail.csv`.
+4. Copy `.env.example` to `.env` and fill in your PostgreSQL password and port.
+5. Run `Data/Load_data.py`, then `Data/Clean_data.py`.
+6. Run the queries in `sql/rfm_queries.sql` in pgAdmin.
+7. Run `Data/rfm.py` for the segment summary, or open the `.pbix` file in Power BI Desktop.
+
+---
+
+## Repository layout
+
+```
 ├── Data/
 │   ├── Load_data.py
 │   ├── Clean_data.py
@@ -112,14 +143,6 @@ customer_segmentation/
 └── README.md
 ```
 
-## How to Run
-1. Install PostgreSQL and create a database named `retail_db`.
-2. Install packages: `pip install pandas sqlalchemy psycopg2-binary matplotlib python-dotenv`
-3. Download the dataset (Online Retail, UCI or Kaggle) and save it as `Data/Online_Retail.csv`.
-4. Copy `.env.example` to `.env` and enter your PostgreSQL password and port.
-5. Run `Data/Load_data.py`, then `Data/Clean_data.py`.
-6. Run the queries in `sql/rfm_queries.sql` in pgAdmin.
-7. Run `Data/rfm.py` for the segment summary, or open the `.pbix` file in Power BI Desktop.
+---
 
-## Author
-Shweta Dhurve | [LinkedIn] (www.linkedin.com/in/shweta-dhurve-94b894210) | [GitHub](shwetadhurve588-wq ·)
+**Shweta Dhurve** · [LinkedIn](https://linkedin.com/in/your-profile) · [GitHub](https://github.com/shwetadhurve588-wq)
