@@ -212,4 +212,4 @@ Open `dashboard/customer_segmentation.pbix` in Power BI Desktop. If the data sou
 
 ---
 
-**Shweta Dhurve** · [LinkedIn](https://linkedin.com/in/your-profile) · [GitHub](https://github.com/shwetadhurve588-wq)
+**Shweta Dhurve** · [LinkedIn](www.linkedin.com/in/shweta-dhurve-94b894210) · [GitHub](https://github.com/shwetadhurve588-wq)
