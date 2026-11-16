@@ -109,18 +109,85 @@ It also adds `total_price = quantity × unit_price`. Rows with no Customer ID ca
 
 ---
 
-## Run it yourself
+## Getting Started
 
-1. Install PostgreSQL and create a database called `retail_db`.
-2. Install packages:
-   ```
-   pip install pandas sqlalchemy psycopg2-binary matplotlib python-dotenv
-   ```
-3. Download the dataset and save it as `Data/Online_Retail.csv`.
-4. Copy `.env.example` to `.env` and fill in your PostgreSQL password and port.
-5. Run `Data/Load_data.py`, then `Data/Clean_data.py`.
-6. Run the queries in `sql/rfm_queries.sql` in pgAdmin.
-7. Run `Data/rfm.py` for the segment summary, or open the `.pbix` file in Power BI Desktop.
+### Prerequisites
+
+| Requirement | Version | Notes |
+|---|---|---|
+| Python | 3.10+ | Tested on 3.13 |
+| PostgreSQL | 14+ | Includes pgAdmin |
+| Power BI Desktop | Latest | Only needed to open the dashboard |
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/shwetadhurve588-wq/customer-segmentation-rfm.git
+cd customer-segmentation-rfm
+```
+
+### 2. Install dependencies
+
+```bash
+pip install pandas sqlalchemy psycopg2-binary matplotlib python-dotenv
+```
+
+### 3. Get the data
+
+Download the **Online Retail** dataset from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/) or Kaggle. Save it as:
+
+```
+Data/Online_Retail.csv
+```
+
+The raw file is excluded from this repository through `.gitignore`.
+
+### 4. Configure the database
+
+Create an empty database in PostgreSQL:
+
+```sql
+CREATE DATABASE retail_db;
+```
+
+Copy the environment template and enter your own credentials:
+
+```bash
+cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
+```
+
+| Variable | Description | Example |
+|---|---|---|
+| `DB_USER` | PostgreSQL user | `postgres` |
+| `DB_PASSWORD` | Your password | `your_password` |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port | `5432` (check yours in pgAdmin) |
+| `DB_NAME` | Database name | `retail_db` |
+
+### 5. Run the pipeline
+
+Run every command from the project root folder.
+
+| Step | Command | What it does | Expected result |
+|---|---|---|---|
+| 1 | `python Data/Load_data.py` | Loads the raw CSV into `online_retail` | 541,909 rows loaded |
+| 2 | `python Data/Clean_data.py` | Cleans the data into `retail_clean` | 392,692 rows saved |
+| 3 | Run `sql/rfm_queries.sql` in pgAdmin | Builds `rfm`, `rfm_scores` and `rfm_segments` | 4,338 customers segmented |
+| 4 | `python Data/rfm.py` | Prints the segment summary and saves `dashboard/segments.png` | Six segments listed |
+
+### 6. View the dashboard
+
+Open `dashboard/customer_segmentation.pbix` in Power BI Desktop. If the data source cannot connect, go to **Transform data, Data source settings** and update the server (for example `localhost:5432`) and the database name.
+
+### Troubleshooting
+
+| Problem | Cause | Fix |
+|---|---|---|
+| `Connection refused` | Wrong port or PostgreSQL is stopped | Check the port in pgAdmin and update `DB_PORT` in `.env` |
+| `password authentication failed` | Wrong credentials in `.env` | Correct `DB_PASSWORD` and save the file |
+| `relation "rfm_segments" does not exist` | SQL step was skipped | Run `sql/rfm_queries.sql` before `rfm.py` |
+| `FileNotFoundError` for the CSV | Wrong file name or location | Save the dataset as `Data/Online_Retail.csv` |
+| `ModuleNotFoundError` | Package missing | Re-run the install command in step 2 |
 
 ---
 
